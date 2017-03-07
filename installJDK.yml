@@ -1,0 +1,53 @@
+---
+########################### Target Host(s) ###########################
+# Specify a Single host
+#       hosts: server1
+# Specify a defined group of hosts from hosts inventory
+#       hosts: production
+# Specify a group of hosts
+#       hosts: server1:server2
+########################### Specify Host(s) ##########################
+- hosts:
+########################### Do Not Modify ###########################
+  become: yes
+  vars:
+    tomcat_service: jamf.tomcat8
+    jdk_policy_path: /usr/java/latest/jre/lib/security/
+    jdk_linux: ~/Documents/Jamf/jdk-8u121-linux-x64.rpm
+    jdk_policy_items:
+      - ~/Documents/Jamf/UnlimitedJCEPolicyJDK8/local_policy.jar
+      - ~/Documents/Jamf/UnlimitedJCEPolicyJDK8/US_export_policy.jar
+
+  tasks:
+    - name: stop tomcat
+      systemd:
+        name: "{{ tomcat_service }}"
+        state: stopped
+
+    - name: copy jdk installer
+      copy:
+        src: "{{ jdk_linux }}"
+        dest: /tmp/
+        owner: root
+        group: root
+        mode: 0755
+
+    - name: install jdk
+      yum:
+        name: /tmp/{{ jdk_linux | basename }}
+        state: present
+
+    - name: copy jdk policy
+      copy:
+        src: "{{ item }}"
+        dest: "{{ jdk_policy_path }}"
+        owner: root
+        group: root
+        mode: 0644
+      with_items: "{{ jdk_policy_items }}"
+
+    - name: start tomcat
+      systemd:
+        name: "{{ tomcat_service }}"
+        state: started
+        enabled: yes
