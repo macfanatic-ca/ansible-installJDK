@@ -7,16 +7,16 @@
 # Specify a group of hosts
 #       hosts: server1:server2
 ########################### Specify Host(s) ##########################
-- hosts:
+- hosts: 
 ########################### Do Not Modify ###########################
   become: yes
   vars:
     tomcat_service: jamf.tomcat8
     jdk_policy_path: /usr/java/latest/jre/lib/security/
-    jdk_linux: ~/Documents/Jamf/jdk-8u121-linux-x64.rpm
+    jdk_linux: ~/Downloads/Jamf/jdk-8u131-linux-x64.rpm
     jdk_policy_items:
-      - ~/Documents/Jamf/UnlimitedJCEPolicyJDK8/local_policy.jar
-      - ~/Documents/Jamf/UnlimitedJCEPolicyJDK8/US_export_policy.jar
+      - ~/Downloads/Jamf/UnlimitedJCEPolicyJDK8/local_policy.jar
+      - ~/Downloads/Jamf/UnlimitedJCEPolicyJDK8/US_export_policy.jar
 
   tasks:
     - name: stop tomcat
