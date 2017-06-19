@@ -1,0 +1,25 @@
+---
+########################### Target Host(s) ###########################
+# Specify a Single host
+#       hosts: server1
+# Specify a defined group of hosts from hosts inventory
+#       hosts: production
+# Specify a group of hosts
+#       hosts: server1:server2
+########################### Specify Host(s) ##########################
+- hosts:
+########################### Do Not Modify ###########################
+  become: yes
+  vars:
+    tomcat_service: jamf.tomcat8
+
+  tasks:
+    - name: stop tomcat
+      systemd:
+        name: "{{ tomcat_service }}"
+        state: stopped
+
+    - name: uninstall jdk
+      yum:
+        name: java-1.8.0-openjdk.x86_64
+        state: removed
