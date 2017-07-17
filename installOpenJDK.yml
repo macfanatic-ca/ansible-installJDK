@@ -12,33 +12,51 @@
   become: yes
   vars:
     tomcat_service: jamf.tomcat8
-    jdk_policy_path: /usr/java/latest/jre/lib/security/
-    jdk_policy_items:
-      - ~/Downloads/Jamf/UnlimitedJCEPolicyJDK8/local_policy.jar
-      - ~/Downloads/Jamf/UnlimitedJCEPolicyJDK8/US_export_policy.jar
 
   tasks:
     - name: stop tomcat
       systemd:
         name: "{{ tomcat_service }}"
         state: stopped
+      when: tomcat_service is defined
 
     - name: install jdk
       yum:
         name: java-1.8.0-openjdk.x86_64
         state: latest
 
-    - name: copy jdk policy
+    - name: download jdk cryptography extension
+      get_url:
+        dest: /tmp/jce_policy-8.zip
+        url: http://download.oracle.com/otn-pub/java/jce/8/jce_policy-8.zip
+        validate_certs: no
+        headers: Cookie:oraclelicense=accept-securebackup-cookie
+        owner: root
+        group: root
+        mode: 0755
+
+    - name: unarchive jdk cryptography
+      unarchive:
+        src: /tmp/jce_policy-8.zip
+        remote_src: yes
+        dest: /tmp/
+
+    - name: install jdk policy
       copy:
-        src: "{{ item }}"
-        dest: "{{ jdk_policy_path }}"
+        src: '/tmp/UnlimitedJCEPolicyJDK8/{{ item }}'
+        dest: '/usr/java/default/jre/lib/security/{{ item }}'
+        follow: yes
+        remote_src: True
         owner: root
         group: root
         mode: 0644
-      with_items: "{{ jdk_policy_items }}"
+      with_items:
+        - local_policy.jar
+        - US_export_policy.jar
 
     - name: start tomcat
       systemd:
         name: "{{ tomcat_service }}"
         state: started
         enabled: yes
+      when: tomcat_service is defined
