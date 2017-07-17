@@ -7,47 +7,70 @@
 # Specify a group of hosts
 #       hosts: server1:server2
 ########################### Specify Host(s) ##########################
-- hosts: 
+- hosts:
 ########################### Do Not Modify ###########################
   become: yes
   vars:
     tomcat_service: jamf.tomcat8
-    jdk_policy_path: /usr/java/latest/jre/lib/security/
-    jdk_linux: ~/Downloads/Jamf/jdk-8u131-linux-x64.rpm
-    jdk_policy_items:
-      - ~/Downloads/Jamf/UnlimitedJCEPolicyJDK8/local_policy.jar
-      - ~/Downloads/Jamf/UnlimitedJCEPolicyJDK8/US_export_policy.jar
 
   tasks:
     - name: stop tomcat
       systemd:
         name: "{{ tomcat_service }}"
         state: stopped
+      when: tomcat_service is defined
 
-    - name: copy jdk installer
-      copy:
-        src: "{{ jdk_linux }}"
-        dest: /tmp/
+    - name: find jdk download link
+      shell: curl -s "https://www.java.com/en/download/manual.jsp" | grep "x64 RPM" | grep -Eo "(http)://[a-zA-Z0-9./?=_-]*" | awk "NR>1{print $1}"
+      register: oracle_jdk_link
+
+    - name: download jdk installer
+      get_url:
+        dest: /tmp/oracle-java.rpm
+        url: "{{ oracle_jdk_link.stdout }}"
+        validate_certs: no
+        headers: Cookie:oraclelicense=accept-securebackup-cookie
         owner: root
         group: root
         mode: 0755
 
     - name: install jdk
       yum:
-        name: /tmp/{{ jdk_linux | basename }}
+        name: /tmp/oracle-java.rpm
         state: present
 
-    - name: copy jdk policy
+    - name: download jdk cryptography extension
+      get_url:
+        dest: /tmp/jce_policy-8.zip
+        url: http://download.oracle.com/otn-pub/java/jce/8/jce_policy-8.zip
+        validate_certs: no
+        headers: Cookie:oraclelicense=accept-securebackup-cookie
+        owner: root
+        group: root
+        mode: 0755
+
+    - name: unarchive jdk cryptography
+      unarchive:
+        src: /tmp/jce_policy-8.zip
+        remote_src: yes
+        dest: /tmp/
+
+    - name: install jdk policy
       copy:
-        src: "{{ item }}"
-        dest: "{{ jdk_policy_path }}"
+        src: '/tmp/UnlimitedJCEPolicyJDK8/{{ item }}'
+        dest: '/usr/java/default/jre/lib/security/{{ item }}'
+        follow: yes
+        remote_src: True
         owner: root
         group: root
         mode: 0644
-      with_items: "{{ jdk_policy_items }}"
+      with_items:
+        - local_policy.jar
+        - US_export_policy.jar
 
     - name: start tomcat
       systemd:
         name: "{{ tomcat_service }}"
         state: started
         enabled: yes
+      when: tomcat_service is defined
