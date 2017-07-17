@@ -7,7 +7,7 @@
 # Specify a group of hosts
 #       hosts: server1:server2
 ########################### Specify Host(s) ##########################
-- hosts:
+- hosts: 
 ########################### Do Not Modify ###########################
   become: yes
   vars:
@@ -37,7 +37,12 @@
     - name: install jdk
       yum:
         name: /tmp/oracle-java.rpm
-        state: present
+        state: installed
+
+    - name: remove jdk installer
+      file:
+        path: rm -rf /tmp/oracle-java.rpm
+        state: absent
 
     - name: download jdk cryptography extension
       get_url:
@@ -55,10 +60,10 @@
         remote_src: yes
         dest: /tmp/
 
-    - name: install jdk policy
+    - name: install jdk cryptography
       copy:
         src: '/tmp/UnlimitedJCEPolicyJDK8/{{ item }}'
-        dest: '/usr/java/default/jre/lib/security/{{ item }}'
+        dest: '/usr/java/default/lib/security/{{ item }}'
         follow: yes
         remote_src: True
         owner: root
@@ -67,6 +72,11 @@
       with_items:
         - local_policy.jar
         - US_export_policy.jar
+
+    - name: remove jdk cryptography
+      file:
+        path: rm -rf /tmp/UnlimitedJCEPolicyJDK8/
+        state: absent
 
     - name: start tomcat
       systemd:

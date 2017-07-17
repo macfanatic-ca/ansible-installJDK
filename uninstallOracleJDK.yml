@@ -7,7 +7,7 @@
 # Specify a group of hosts
 #       hosts: server1:server2
 ########################### Specify Host(s) ##########################
-- hosts: 
+- hosts:
 ########################### Do Not Modify ###########################
   become: yes
   vars:
@@ -20,11 +20,7 @@
         state: stopped
       when: tomcat_service is defined
 
-    - name: find installed jdk
-      shell: rpm -qa | grep ^jdk*
-      register: installed_jdk
-
     - name: uninstall jdk
       yum:
-        name: "{{ installed_jdk.stdout }}"
-        state: absent
+        name: jre1.8.0*
+        state: removed
