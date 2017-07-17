@@ -7,7 +7,7 @@
 # Specify a group of hosts
 #       hosts: server1:server2
 ########################### Specify Host(s) ##########################
-- hosts:
+- hosts: 
 ########################### Do Not Modify ###########################
   become: yes
   vars:
@@ -18,8 +18,9 @@
       systemd:
         name: "{{ tomcat_service }}"
         state: stopped
+      when: tomcat_service is defined
 
     - name: uninstall jdk
       yum:
         name: java-1.8.0-openjdk.x86_64
-        state: removed
+        state: absent
